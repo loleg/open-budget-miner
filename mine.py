@@ -51,8 +51,8 @@ def munge_meta(txt):
 	p_meta += 'Aufgabenfeld (.*) '
 	p_meta += 'Massnahme\(n\) (.*) '
 	p_meta += 'Kurzbeschrieb (.*) '
-	p_meta += '\xc3\x84nderung Rechtsgrundlage\(n\) (.*) '
-	p_meta += '(Voranschlag)*'
+	p_meta += '\xc3\x84nderung Rechtsgrundlage\(n\) (.*)'
+	#p_meta += '(Voranschlag)?'
 	p_03 = re.compile(p_meta)
 
 	tcn = p_01.split(p_00.sub("", txt))
@@ -62,13 +62,14 @@ def munge_meta(txt):
 		p = p_03.search(p_02.sub("Nr. ", d))
 		if p: 
 			#print p.groups()
+			p_05 = p.groups()[5].split('Voranschlag')[0].strip()
 			p_item = {
 				"Direktion": 		p.groups()[0],
 				"Nr": 				p.groups()[1],
 				"Aufgabenfeld": 	p.groups()[2],
 				"Massnahme": 		p.groups()[3],
 				"Kurzbeschrieb":	p.groups()[4],
-				"Rechtsgrundlage":	p.groups()[5],
+				"Rechtsgrundlage":	p_05,
 				"Auswirkungen": {
 					"Finanzielle": None,
 					"Vollzeitstellen": None,
