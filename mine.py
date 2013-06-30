@@ -36,37 +36,39 @@ def convert_pdf(filename, with_params=False):
 	retstr.close()
 	return str
 
+# Iterate on the directorates
+p_01 = re.compile(r'Direktion ')
+
+# Drop the page number
+p_00 = re.compile(r'(  +[6-7][0-9] +)')
+
+# Correct buggy numbers
+p_02 = re.compile(r'Nr\. Nr\. ')
+
+# Extract meta
+p_03 = re.compile('^(.*) Nr\. ([0-9a\.]+).*' +
+				'Aufgabenfeld (.*)' +
+				'Massnahme\(n\) (.*)' +
+				'Kurzbeschrieb (.*)' +
+				'\xc3\x84nderung Rechtsgrundlage\(n\) (.*)')
+
+p_04 = re.compile(r'(Voranschlag[0-9].+Aufgaben-/Finanzplan)')
+
+p_11 = re.compile(r'\nVoranschlag')
+
 def munge_meta(txt):
-	# Drop the page number
-	p_00 = re.compile('( +[6-7][0-9] +)')
-
-	# Iterate on the directorates
-	p_01 = re.compile('Direktion ')
-
-	# Correct buggy numbers
-	p_02 = re.compile('Nr\. Nr\. ')
-
-	# Extract meta
-	p_meta = '^(.*) Nr\. ([0-9a\.]+).*'
-	p_meta += 'Aufgabenfeld (.*)'
-	p_meta += 'Massnahme\(n\) (.*)'
-	p_meta += 'Kurzbeschrieb (.*)'
-	p_meta += '\xc3\x84nderung Rechtsgrundlage\(n\) (.*)'
-	p_03 = re.compile(p_meta)
-	
-	p_04 = re.compile('(Voranschlag[0-9].+Aufgaben-/Finanzplan)')
-
 	tcn = p_01.split(p_00.sub("", txt))
 
-	for d in tcn:
+	for ix, d in enumerate(tcn):
 		#print "\n\n----" + d + "<<<<\n\n"
 		p = p_03.search(p_02.sub("Nr. ", d))
 		if p: 
 			#print p.groups()
 			item = {
+				"_ix": 				ix,
 				"Direktion": 		p.groups()[0].strip(),
-				"Nr": 				p.groups()[1],
-				"Aufgabenfeld": 	p.groups()[2],
+				"Nr": 				p.groups()[1].strip(),
+				"Aufgabenfeld": 	p.groups()[2].strip(),
 				"Massnahme": 		p.groups()[3].strip(),
 				"Kurzbeschrieb":	p_04.sub("", p.groups()[4]).strip(),
 				"Rechtsgrundlage":	p_04.sub("", p.groups()[5]).strip(),
@@ -78,37 +80,47 @@ def munge_meta(txt):
 			}
 			sys.stderr.write("Processing {" + item["Nr"] + "}\n")
 			meta.append(item)
-		#else:
-		#	sys.stderr.write("Skipping ---\n" + d + "<<<\n\n")
+		else:
+			sys.stderr.write("Skipping meta:\n---\n" + d + "<<<\n\n")
 
 def munge_stat(txt):
 	# Iterate on the directorates
-	p_11 = re.compile(r'\nVoranschlag')
 	tcn = p_11.split(txt)
-	
-	p_12 = re.compile('Aufgaben-/Finanzplan')
-	
-	p_lines = re.compile('\n')
 
-	ix = 0
-	for d in tcn:
-		p = p_12.search(d)
-		if p:
-			#print "\n\n----" + d + "<<<<\n\n"
-			l = p_lines.split(d)
+	p_lines = re.compile('\n')
+	prevpd = False
+	itemix = 0
+	
+	for ix, pd in enumerate(tcn):
+		if not prevpd: prevpd = pd
+		if "Aufgaben-/Finanzplan" in pd:
+			#print "\n\n----" + pd + "<<<<\n\n"
+			if r"\n" + meta[itemix]["Nr"] not in prevpd or r"Nr. " + meta[itemix]["Nr"] not in prevpd:
+				try:
+					item = next(x for x in meta if r"\n" + x["Nr"] in prevpd or r"Nr. " + x["Nr"] in prevpd)
+					itemix = item["_ix"]
+				except StopIteration: 
+					item = False
+				if not item: 
+					sys.stderr.write("[warn] missing stat " + str(ix) + "\n")
+					#sys.stderr.write("Skipping stats:\n---\n" + d + "<<<\n\n")
+					continue
+			else:
+				itemix = itemix + 1
+				item = meta[itemix]
+			l = p_lines.split(pd)
 			aus_fin = { "2014": l[2], "2015": l[10],  "2016": l[9], "2017": l[17] }
 			aus_vol = { "2014": l[3], "2015": l[12], "2016": l[11], "2017": l[18] }
 			aus_gem = { "2014": l[4], "2015": l[14], "2016": l[13], "2017": l[19] }
-			meta[ix]['Auswirkungen']['Finanzielle'] = aus_fin
-			meta[ix]['Auswirkungen']['Vollzeitstellen'] = aus_vol
-			meta[ix]['Auswirkungen']['Gemeinden'] = aus_gem
-			#print "\n\nNr: " + meta[ix]["Nr"]
-			#print meta[ix]['Auswirkungen']
-			sys.stderr.write("Tabulating {" + meta[ix]["Nr"] + "}\n")
-			ix = ix + 1
+			item['Auswirkungen']['Finanzielle'] = aus_fin
+			item['Auswirkungen']['Vollzeitstellen'] = aus_vol
+			item['Auswirkungen']['Gemeinden'] = aus_gem
+			sys.stderr.write("Tabulating {" + item["Nr"] + "}\n")
 		#else:
-		#	sys.stderr.write("Skipping ---\n" + d + "<<<\n\n")
-
+			#sys.stderr.write("Skipping stats:\n---\n" + pd + "<<<\n\n")
+		prevpd = pd
+	for item in meta:
+		del(item['_ix'])
 
 filename = sys.argv[1].strip()
 if filename.endswith(".pdf"):
