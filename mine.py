@@ -54,7 +54,7 @@ def munge_meta(txt):
 	p_meta += '\xc3\x84nderung Rechtsgrundlage\(n\) (.*)'
 	p_03 = re.compile(p_meta)
 	
-	p_04 = re.compile('(Voranschlag.+Aufgaben-/Finanzplan)')
+	p_04 = re.compile('(Voranschlag[0-9].+Aufgaben-/Finanzplan)')
 
 	tcn = p_01.split(p_00.sub("", txt))
 
@@ -66,10 +66,10 @@ def munge_meta(txt):
 			item = {
 				"Direktion": 		p.groups()[0].strip(),
 				"Nr": 				p.groups()[1],
-				"Aufgabenfeld": 	p.groups()[2].strip(),
+				"Aufgabenfeld": 	p.groups()[2],
 				"Massnahme": 		p.groups()[3].strip(),
 				"Kurzbeschrieb":	p_04.sub("", p.groups()[4]).strip(),
-				"Rechtsgrundlage":	p_04.sub("", p.groups()[5]).split('Voranschlag')[0].strip(),
+				"Rechtsgrundlage":	p_04.sub("", p.groups()[5]).strip(),
 				"Auswirkungen": {
 					"Finanzielle": None,
 					"Vollzeitstellen": None,
@@ -111,9 +111,9 @@ if filename.endswith(".pdf"):
 	txt = convert_pdf(filename)
 	munge_meta(txt)
 	#print "Items read:", len(meta)
-	#print txt
-	print meta
-	quit
+	#sys.stderr.write(txt)
+	#print meta
+	#quit
 
 	txt = convert_pdf(filename, True)
 	munge_stat(txt)
