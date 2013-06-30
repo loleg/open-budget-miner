@@ -38,7 +38,7 @@ def convert_pdf(filename, with_params=False):
 
 def munge_meta(txt):
 	# Drop the page number
-	p_00 = re.compile('(    +[6-7][0-9]  )')
+	p_00 = re.compile('( +[6-7][0-9] +)')
 
 	# Iterate on the directorates
 	p_01 = re.compile('Direktion ')
@@ -47,13 +47,14 @@ def munge_meta(txt):
 	p_02 = re.compile('Nr\. Nr\. ')
 
 	# Extract meta
-	p_meta = '^(.*) Nr\. ([0-9\.]+).*'
-	p_meta += 'Aufgabenfeld (.*) '
-	p_meta += 'Massnahme\(n\) (.*) '
-	p_meta += 'Kurzbeschrieb (.*) '
+	p_meta = '^(.*) Nr\. ([0-9a\.]+).*'
+	p_meta += 'Aufgabenfeld (.*)'
+	p_meta += 'Massnahme\(n\) (.*)'
+	p_meta += 'Kurzbeschrieb (.*)'
 	p_meta += '\xc3\x84nderung Rechtsgrundlage\(n\) (.*)'
-	#p_meta += '(Voranschlag)?'
 	p_03 = re.compile(p_meta)
+	
+	p_04 = re.compile('(Voranschlag.+Aufgaben-/Finanzplan)')
 
 	tcn = p_01.split(p_00.sub("", txt))
 
@@ -62,22 +63,21 @@ def munge_meta(txt):
 		p = p_03.search(p_02.sub("Nr. ", d))
 		if p: 
 			#print p.groups()
-			p_05 = p.groups()[5].split('Voranschlag')[0].strip()
-			p_item = {
-				"Direktion": 		p.groups()[0],
+			item = {
+				"Direktion": 		p.groups()[0].strip(),
 				"Nr": 				p.groups()[1],
-				"Aufgabenfeld": 	p.groups()[2],
-				"Massnahme": 		p.groups()[3],
-				"Kurzbeschrieb":	p.groups()[4],
-				"Rechtsgrundlage":	p_05,
+				"Aufgabenfeld": 	p.groups()[2].strip(),
+				"Massnahme": 		p.groups()[3].strip(),
+				"Kurzbeschrieb":	p_04.sub("", p.groups()[4]).strip(),
+				"Rechtsgrundlage":	p_04.sub("", p.groups()[5]).split('Voranschlag')[0].strip(),
 				"Auswirkungen": {
 					"Finanzielle": None,
 					"Vollzeitstellen": None,
 					"Gemeinden": None
 				}
 			}
-			#print p_item["Nr"]
-			meta.append(p_item)
+			sys.stderr.write("Processing {" + item["Nr"] + "}\n")
+			meta.append(item)
 
 def munge_stat(txt):
 	# Iterate on the directorates
@@ -102,6 +102,7 @@ def munge_stat(txt):
 			meta[ix]['Auswirkungen']['Gemeinden'] = aus_gem
 			#print "\n\nNr: " + meta[ix]["Nr"]
 			#print meta[ix]['Auswirkungen']
+			sys.stderr.write("Tabulating {" + meta[ix]["Nr"] + "}\n")
 			ix = ix + 1
 
 
@@ -111,12 +112,13 @@ if filename.endswith(".pdf"):
 	munge_meta(txt)
 	#print "Items read:", len(meta)
 	#print txt
-	#print meta
+	print meta
+	quit
 
 	txt = convert_pdf(filename, True)
 	munge_stat(txt)
 	print json.dumps(meta)
-	sys.stderr.write("Items read:" + str(len(meta)) + "\n")
+	sys.stderr.write("Items read: " + str(len(meta)) + "\n")
 
 else:
 	print "Please provide PDF filename"

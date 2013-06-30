@@ -14,5 +14,5 @@ $ ln -s ../pdfminer/build/lib/pdfminer
 
 3. run the script appending the PDF filename
 
-$ python mine.py data/anhang_sample.pdf >> output/sample.json
+$ python mine.py data/sample.pdf >> output/sample.json
 
