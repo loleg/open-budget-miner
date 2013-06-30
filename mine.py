@@ -87,27 +87,31 @@ def munge_stat(txt):
 	# Iterate on the directorates
 	tcn = p_11.split(txt)
 
+	#p_13 = re.compile(r'Direktion(?:.*\n){1,10}([0-9a\.]+)')
+
 	p_lines = re.compile('\n')
 	prevpd = False
-	itemix = -1
+	itemix = 0
 	
 	for ix, pd in enumerate(tcn):
 		if not prevpd: prevpd = pd
 		if "Aufgaben-/Finanzplan" in pd:
 			#print "\n\n----" + pd + "<<<<\n\n"
-			itemix = itemix + 1
-			if r"\n" + meta[itemix]["Nr"] not in prevpd and r"Nr. " + meta[itemix]["Nr"] not in prevpd:
+			curnr = meta[itemix]["Nr"]
+			if curnr not in prevpd and 'Nr. ' + curnr not in prevpd: 
 				try:
-					item = next(x for x in meta if r"\n" + x["Nr"] in prevpd or r"Nr. " + x["Nr"] in prevpd)
+					item = next(x for x in meta if 
+						x["Nr"] in prevpd or
+						'Nr. ' + x["Nr"] in prevpd)
 					itemix = item["_ix"]
-					sys.stderr.write("[warn] found stat at " + str(itemix) + "\n")
-				except StopIteration: 
+				except StopIteration:
 					item = False
-				if not item: 
-					sys.stderr.write("[warn] missing stat at " + str(ix) + "\n")
-					#sys.stderr.write("Skipping stats:\n---\n" + d + "<<<\n\n")
-					continue
-			item = meta[itemix]
+			else:
+				item = meta[itemix]
+			if not item: 
+				sys.stderr.write("[warn] missing stat at " + str(ix) + "\n")
+				sys.stderr.write("Skipping:\n---\n" + prevpd + "<<<\n\n")
+				continue
 			l = p_lines.split(pd)
 			aus_fin = { "2014": l[2], "2015": l[10],  "2016": l[9], "2017": l[17] }
 			aus_vol = { "2014": l[3], "2015": l[12], "2016": l[11], "2017": l[18] }
@@ -119,6 +123,7 @@ def munge_stat(txt):
 		#else:
 			#sys.stderr.write("Skipping stats:\n---\n" + pd + "<<<\n\n")
 		prevpd = pd
+		itemix = itemix + 1
 	for item in meta:
 		del(item['_ix'])
 
