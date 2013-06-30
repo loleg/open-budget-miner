@@ -81,7 +81,7 @@ def munge_meta(txt):
 			sys.stderr.write("Processing {" + item["Nr"] + "}\n")
 			meta.append(item)
 		else:
-			sys.stderr.write("Skipping meta:\n---\n" + d + "<<<\n\n")
+			sys.stderr.write("Ignoring meta:\n---\n" + d + "<<<\n\n")
 
 def munge_stat(txt):
 	# Iterate on the directorates
@@ -89,25 +89,25 @@ def munge_stat(txt):
 
 	p_lines = re.compile('\n')
 	prevpd = False
-	itemix = 0
+	itemix = -1
 	
 	for ix, pd in enumerate(tcn):
 		if not prevpd: prevpd = pd
 		if "Aufgaben-/Finanzplan" in pd:
 			#print "\n\n----" + pd + "<<<<\n\n"
-			if r"\n" + meta[itemix]["Nr"] not in prevpd or r"Nr. " + meta[itemix]["Nr"] not in prevpd:
+			itemix = itemix + 1
+			if r"\n" + meta[itemix]["Nr"] not in prevpd and r"Nr. " + meta[itemix]["Nr"] not in prevpd:
 				try:
 					item = next(x for x in meta if r"\n" + x["Nr"] in prevpd or r"Nr. " + x["Nr"] in prevpd)
 					itemix = item["_ix"]
+					sys.stderr.write("[warn] found stat at " + str(itemix) + "\n")
 				except StopIteration: 
 					item = False
 				if not item: 
-					sys.stderr.write("[warn] missing stat " + str(ix) + "\n")
+					sys.stderr.write("[warn] missing stat at " + str(ix) + "\n")
 					#sys.stderr.write("Skipping stats:\n---\n" + d + "<<<\n\n")
 					continue
-			else:
-				itemix = itemix + 1
-				item = meta[itemix]
+			item = meta[itemix]
 			l = p_lines.split(pd)
 			aus_fin = { "2014": l[2], "2015": l[10],  "2016": l[9], "2017": l[17] }
 			aus_vol = { "2014": l[3], "2015": l[12], "2016": l[11], "2017": l[18] }
