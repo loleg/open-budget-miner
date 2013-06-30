@@ -78,10 +78,12 @@ def munge_meta(txt):
 			}
 			sys.stderr.write("Processing {" + item["Nr"] + "}\n")
 			meta.append(item)
+		#else:
+		#	sys.stderr.write("Skipping ---\n" + d + "<<<\n\n")
 
 def munge_stat(txt):
 	# Iterate on the directorates
-	p_11 = re.compile('Voranschlag')
+	p_11 = re.compile(r'\nVoranschlag')
 	tcn = p_11.split(txt)
 	
 	p_12 = re.compile('Aufgaben-/Finanzplan')
@@ -104,18 +106,23 @@ def munge_stat(txt):
 			#print meta[ix]['Auswirkungen']
 			sys.stderr.write("Tabulating {" + meta[ix]["Nr"] + "}\n")
 			ix = ix + 1
+		#else:
+		#	sys.stderr.write("Skipping ---\n" + d + "<<<\n\n")
 
 
 filename = sys.argv[1].strip()
 if filename.endswith(".pdf"):
 	txt = convert_pdf(filename)
 	munge_meta(txt)
+	
 	#print "Items read:", len(meta)
 	#sys.stderr.write(txt)
 	#print meta
 	#quit
 
 	txt = convert_pdf(filename, True)
+	#print txt
+	#quit
 	munge_stat(txt)
 	print json.dumps(meta)
 	sys.stderr.write("Items read: " + str(len(meta)) + "\n")
