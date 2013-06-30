@@ -54,7 +54,7 @@ p_03 = re.compile('^(.*) Nr\. ([0-9a\.]+).*' +
 
 p_04 = re.compile(r'(Voranschlag[0-9].+Aufgaben-/Finanzplan)')
 
-p_11 = re.compile(r'\nVoranschlag')
+p_11 = re.compile(r'Voranschlag\n2014')
 
 def munge_meta(txt):
 	tcn = p_01.split(p_00.sub("", txt))
@@ -98,6 +98,8 @@ def munge_stat(txt):
 		if "Aufgaben-/Finanzplan" in pd:
 			#print "\n\n----" + pd + "<<<<\n\n"
 			curnr = meta[itemix]["Nr"]
+			#if curnr == "4.2":
+			#	sys.stderr.write("??:\n---\n" + prevpd + "---" + pd + "<<<\n\n")
 			if curnr not in prevpd and 'Nr. ' + curnr not in prevpd: 
 				try:
 					item = next(x for x in meta if 
@@ -126,6 +128,8 @@ def munge_stat(txt):
 		itemix = itemix + 1
 	for item in meta:
 		del(item['_ix'])
+		if not item['Auswirkungen']['Finanzielle']:
+			sys.stderr.write("[warn] missing stat {" + item["Nr"] + "}\n")
 
 filename = sys.argv[1].strip()
 if filename.endswith(".pdf"):
