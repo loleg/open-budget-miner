@@ -54,7 +54,7 @@ p_03 = re.compile('^(.*) Nr\. ([0-9a\.]+).*' +
 
 p_04 = re.compile(r'(Voranschlag[0-9].+Aufgaben-/Finanzplan)')
 
-p_11 = re.compile(r'Voranschlag\n2014')
+p_11 = re.compile(r'\nVoranschlag')
 
 def munge_meta(txt):
 	tcn = p_01.split(p_00.sub("", txt))
