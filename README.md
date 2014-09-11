@@ -4,15 +4,15 @@ Requires Python 2 and pdfminer
 
 # Usage:
 
-1. download and compile pdfminer
+Download and compile pdfminer
 ```
 $ git clone https://github.com/euske/pdfminer.git
 ```
-2. make a symlink in this folder
+Make a symlink in this folder
 ```
 $ ln -s ../pdfminer/build/lib/pdfminer
 ```
-3. run the script appending the PDF filename
+Run the script appending the PDF filename
 ```
 $ python mine.py data/sample.pdf > output/sample.json
 ```
